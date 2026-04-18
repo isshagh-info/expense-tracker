@@ -88,3 +88,8 @@ def add_transaction():
         return redirect(url_for("dashboard"))
 
     return render_template("add_transaction.html")
+
+@app.route("/users")
+def users():
+    all_users = User.query.all()
+    return "<br>".join([u.email for u in all_users])
