@@ -1,0 +1,16 @@
+<h2>Balance: {{ balance }}</h2>
+
+<a href="/add">Add Transaction</a>
+<a href="/logout">Logout</a>
+
+<hr>
+
+<h3>Transactions</h3>
+
+<ul>
+  {% for t in transactions %}
+    <li>
+      {{ t.date }} | {{ t.amount }} | {{ t.type }} | {{ t.category }}
+    </li>
+  {% endfor %}
+</ul>
