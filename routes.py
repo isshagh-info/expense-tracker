@@ -14,12 +14,14 @@ def register():
         username = request.form["username"]
         email = request.form["email"]
         password = request.form["password"]
-        
-        if not username or not email or not password:
-            return "All fields required"
 
-        hashed_password = generate_password_hash(password)
-        user = User(username=username, email=email, password=hashed_password)
+        # 🔥 CHECK IF USER EXISTS
+        existing_user = User.query.filter_by(email=email).first()
+
+        if existing_user:
+            return "Email already exists!"
+
+        user = User(username=username, email=email, password=password)
         db.session.add(user)
         db.session.commit()
 
