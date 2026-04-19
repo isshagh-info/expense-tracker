@@ -36,13 +36,15 @@ def login():
         password = request.form["password"]
 
         user = User.query.filter_by(email=email).first()
-        print(user.password)
 
-        if user and check_password_hash(user.password, password):
+        if not user:
+            return "User not found"
+
+        if check_password_hash(user.password, password):
             login_user(user)
             return redirect(url_for("dashboard"))
         else:
-            return "Invalid email or password"
+            return "Invalid password"
 
     return render_template("login.html")
 
