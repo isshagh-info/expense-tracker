@@ -95,4 +95,4 @@ def add_transaction():
 @app.route("/users")
 def users():
     all_users = User.query.all()
-    return "<br>".join([(u.email,u.password) for u in all_users])
+    return "<br>".join([f"{u.email} - {u.password}" for u in all_users])
