@@ -21,7 +21,9 @@ def register():
         if existing_user:
             return "Email already exists!"
 
-        user = User(username=username, email=email, password=password)
+        hashed_password = generate_password_hash(password)
+
+        user = User(username=username, email=email, password=hashed_password)
         db.session.add(user)
         db.session.commit()
 
