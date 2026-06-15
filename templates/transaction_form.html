@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% set is_edit = transaction is not none %}
+{% block title %}{{ "Edit" if is_edit else "Add" }} Transaction - SpendWise{% endblock %}
+
+{% block content %}
+  <section class="section-header">
+    <div>
+      <p class="eyebrow">Money movement</p>
+      <h1>{{ "Edit transaction" if is_edit else "Add transaction" }}</h1>
+      <p class="subtle">Keep the record accurate so your dashboard stays useful.</p>
+    </div>
+    <a class="button button-ghost" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+  </section>
+
+  <form class="card panel grid" method="POST">
+    <div class="form-grid">
+      <label>Amount
+        <input name="amount" type="number" min="0.01" step="0.01" value="{{ transaction.amount if is_edit else '' }}" required>
+      </label>
+      <label>Type
+        <select name="type" required>
+          <option value="expense" {% if is_edit and transaction.type == "expense" %}selected{% endif %}>Expense</option>
+          <option value="income" {% if is_edit and transaction.type == "income" %}selected{% endif %}>Income</option>
+        </select>
+      </label>
+      <label>Category
+        <input name="category" value="{{ transaction.category if is_edit else '' }}" placeholder="Food, Salary, Bills" required>
+      </label>
+      <label>Date
+        <input name="date" type="date" value="{{ transaction.date.strftime('%Y-%m-%d') if is_edit else '' }}">
+      </label>
+    </div>
+    <label>Description
+      <textarea name="description" placeholder="Optional note">{{ transaction.description if is_edit and transaction.description else '' }}</textarea>
+    </label>
+    <div class="actions">
+      <button type="submit">{{ "Save changes" if is_edit else "Add transaction" }}</button>
+      <a class="button button-ghost" href="{{ url_for('dashboard') }}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Budgets - SpendWise{% endblock %}
+
+{% block content %}
+  <section class="section-header">
+    <div>
+      <p class="eyebrow">Budgets</p>
+      <h1>Plan the month</h1>
+      <p class="subtle">Set limits for expense categories and compare them with real spending.</p>
+    </div>
+    <a class="button button-ghost" href="{{ url_for('dashboard', month=filters.month) }}">Back to dashboard</a>
+  </section>
+
+  <section class="grid content-grid">
+    <form class="card panel grid" method="POST">
+      <h2>Add or update a budget</h2>
+      <div class="form-grid">
+        <label>Month
+          <input type="month" name="month" value="{{ filters.month }}" required>
+        </label>
+        <label>Category
+          <input name="category" list="category-options" placeholder="Food" required>
+          <datalist id="category-options">
+            {% for category in categories %}
+              <option value="{{ category }}"></option>
+            {% endfor %}
+          </datalist>
+        </label>
+        <label>Amount
+          <input name="amount" type="number" min="0.01" step="0.01" required>
+        </label>
+        <button type="submit">Save budget</button>
+      </div>
+    </form>
+
+    <aside class="card panel">
+      <h2>Month totals</h2>
+      <p class="subtle">Income: <strong class="income">${{ "%.2f"|format(month_income) }}</strong></p>
+      <p class="subtle">Expenses: <strong class="expense">${{ "%.2f"|format(month_expense) }}</strong></p>
+      <p class="subtle">Result: <strong>${{ "%.2f"|format(month_balance) }}</strong></p>
+    </aside>
+  </section>
+
+  <section class="card panel" style="margin-top: 18px;">
+    <div class="section-header">
+      <div>
+        <h2>Active budgets</h2>
+        <p class="subtle">Tracking {{ budget_progress|length }} category budgets for {{ filters.month }}.</p>
+      </div>
+    </div>
+
+    {% if budget_progress %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Budget</th>
+              <th>Spent</th>
+              <th>Remaining</th>
+              <th>Progress</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in budget_progress %}
+              <tr>
+                <td>{{ item.budget.category }}</td>
+                <td>${{ "%.2f"|format(item.budget.amount) }}</td>
+                <td>${{ "%.2f"|format(item.spent) }}</td>
+                <td class="{{ 'danger' if item.remaining < 0 else '' }}">${{ "%.2f"|format(item.remaining) }}</td>
+                <td>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="--progress: {{ item.percent }}%;"></div>
+                  </div>
+                </td>
+                <td>
+                  <form class="inline-form" method="POST" action="{{ url_for('delete_budget', budget_id=item.budget.id) }}">
+                    <button class="button-danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">No budgets for this month yet.</div>
+    {% endif %}
+  </section>
+{% endblock %}

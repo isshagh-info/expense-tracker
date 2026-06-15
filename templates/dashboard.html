@@ -1,16 +1,130 @@
-<h2>Balance: {{ balance }}</h2>
+{% extends "base.html" %}
 
-<a href="/add">Add Transaction</a>
-<a href="/logout">Logout</a>
+{% block title %}Dashboard - SpendWise{% endblock %}
 
-<hr>
+{% block content %}
+  <section class="hero-row">
+    <div>
+      <p class="eyebrow">Dashboard</p>
+      <h1>Hello, {{ current_user.username }}</h1>
+      <p class="subtle">Your financial overview for {{ filters.month }}.</p>
+    </div>
+    <div class="actions">
+      <a class="button button-secondary" href="{{ url_for('export_transactions') }}">Export CSV</a>
+      <a class="button button-primary" href="{{ url_for('add_transaction') }}">Add transaction</a>
+    </div>
+  </section>
 
-<h3>Transactions</h3>
+  <section class="grid stats-grid">
+    <article class="card stat-card">
+      <div class="stat-label">All-time balance</div>
+      <div class="stat-value">${{ "%.2f"|format(balance) }}</div>
+    </article>
+    <article class="card stat-card">
+      <div class="stat-label">Total income</div>
+      <div class="stat-value income">${{ "%.2f"|format(total_income) }}</div>
+    </article>
+    <article class="card stat-card">
+      <div class="stat-label">Total expenses</div>
+      <div class="stat-value expense">${{ "%.2f"|format(total_expense) }}</div>
+    </article>
+    <article class="card stat-card">
+      <div class="stat-label">Month result</div>
+      <div class="stat-value">${{ "%.2f"|format(month_balance) }}</div>
+    </article>
+  </section>
 
-<ul>
-  {% for t in transactions %}
-    <li>
-      {{ t.date }} | {{ t.amount }} | {{ t.type }} | {{ t.category }}
-    </li>
-  {% endfor %}
-</ul>
+  <section class="card panel" style="margin-top: 18px;">
+    <form class="filters" method="GET">
+      <label>Month
+        <input type="month" name="month" value="{{ filters.month }}">
+      </label>
+      <label>Type
+        <select name="type">
+          <option value="">All</option>
+          <option value="income" {% if filters.type == "income" %}selected{% endif %}>Income</option>
+          <option value="expense" {% if filters.type == "expense" %}selected{% endif %}>Expense</option>
+        </select>
+      </label>
+      <label>Category
+        <select name="category">
+          <option value="">All categories</option>
+          {% for category in categories %}
+            <option value="{{ category }}" {% if filters.category == category %}selected{% endif %}>{{ category }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Filter</button>
+    </form>
+  </section>
+
+  <section class="grid content-grid" style="margin-top: 18px;">
+    <div class="card panel">
+      <div class="section-header">
+        <div>
+          <h2>Transactions</h2>
+          <p class="subtle">{{ transactions|length }} records shown.</p>
+        </div>
+      </div>
+      {% if transactions %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in transactions %}
+                <tr>
+                  <td>{{ t.date.strftime("%Y-%m-%d") }}</td>
+                  <td><span class="pill">{{ t.type }}</span></td>
+                  <td>{{ t.category }}</td>
+                  <td>{{ t.description or "-" }}</td>
+                  <td class="{{ 'income' if t.type == 'income' else 'expense' }}">${{ "%.2f"|format(t.amount) }}</td>
+                  <td>
+                    <div class="actions">
+                      <a class="button button-ghost" href="{{ url_for('edit_transaction', transaction_id=t.id) }}">Edit</a>
+                      <form class="inline-form" method="POST" action="{{ url_for('delete_transaction', transaction_id=t.id) }}">
+                        <button class="button-danger" type="submit">Delete</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">No transactions yet. Add one to start tracking.</div>
+      {% endif %}
+    </div>
+
+    <aside class="card panel">
+      <h2>Budget progress</h2>
+      <p class="subtle">Expense progress by category for {{ filters.month }}.</p>
+      {% if budget_progress %}
+        {% for item in budget_progress %}
+          <div class="progress-item">
+            <div class="progress-top">
+              <span>{{ item.budget.category }}</span>
+              <span>${{ "%.2f"|format(item.spent) }} / ${{ "%.2f"|format(item.budget.amount) }}</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="--progress: {{ item.percent }}%;"></div>
+            </div>
+            <div class="subtle">${{ "%.2f"|format(item.remaining) }} remaining</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">Set category budgets to monitor spending.</div>
+      {% endif %}
+      <a class="button button-secondary" href="{{ url_for('budgets', month=filters.month) }}">Manage budgets</a>
+    </aside>
+  </section>
+{% endblock %}

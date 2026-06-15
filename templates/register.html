@@ -1,6 +1,29 @@
-<form method="POST">
-  <input name="username" placeholder="Username"><br>
-  <input name="email" placeholder="Email"><br>
-  <input name="password" type="password" placeholder="Password"><br>
-  <button type="submit">Register</button>
-</form>
+{% extends "base.html" %}
+
+{% block title %}Register - SpendWise{% endblock %}
+
+{% block content %}
+  <section class="auth-shell">
+    <div class="auth-copy">
+      <p class="eyebrow">Start fresh</p>
+      <h1>Build a calmer money habit in minutes.</h1>
+      <p>Add transactions, watch the monthly picture change, and set budgets before spending gets away from you.</p>
+    </div>
+
+    <form class="card panel" method="POST">
+      <h2>Create account</h2>
+      <p class="subtle">Your dashboard is private to your login.</p>
+      <label>Username
+        <input name="username" autocomplete="username" required>
+      </label>
+      <label>Email
+        <input name="email" type="email" autocomplete="email" required>
+      </label>
+      <label>Password
+        <input name="password" type="password" autocomplete="new-password" minlength="6" required>
+      </label>
+      <button type="submit">Register</button>
+      <p class="subtle">Already registered? <a href="{{ url_for('login') }}">Log in</a>.</p>
+    </form>
+  </section>
+{% endblock %}

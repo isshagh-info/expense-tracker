@@ -1,5 +1,26 @@
-<form method="POST">
-  <input name="email" placeholder="Email"><br>
-  <input name="password" type="password" placeholder="Password"><br>
-  <button type="submit">Login</button>
-</form>
+{% extends "base.html" %}
+
+{% block title %}Login - SpendWise{% endblock %}
+
+{% block content %}
+  <section class="auth-shell">
+    <div class="auth-copy">
+      <p class="eyebrow">Personal finance</p>
+      <h1>Know where your money goes before it disappears.</h1>
+      <p>Track income, expenses, budgets, and monthly progress from one clean dashboard.</p>
+    </div>
+
+    <form class="card panel" method="POST">
+      <h2>Welcome back</h2>
+      <p class="subtle">Log in to manage your money.</p>
+      <label>Email
+        <input name="email" type="email" autocomplete="email" required>
+      </label>
+      <label>Password
+        <input name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit">Login</button>
+      <p class="subtle">New here? <a href="{{ url_for('register') }}">Create an account</a>.</p>
+    </form>
+  </section>
+{% endblock %}
