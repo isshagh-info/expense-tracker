@@ -58,14 +58,31 @@
     </form>
   </section>
 
-  <section class="grid content-grid" style="margin-top: 18px;">
-    <div class="card panel">
-      <div class="section-header">
-        <div>
-          <h2>Transactions</h2>
-          <p class="subtle">{{ transactions|length }} records shown.</p>
-        </div>
+  <section class="card panel chart-card" style="margin-top: 18px;">
+    <h2>Income vs. expenses</h2>
+    <p class="subtle">Daily totals for the selected period.</p>
+    <form class="filters" id="daily-summary-form">
+      <label>From
+        <input type="date" name="start" id="daily-summary-start">
+      </label>
+      <label>To
+        <input type="date" name="end" id="daily-summary-end">
+      </label>
+      <button type="submit">Apply</button>
+    </form>
+    <div class="chart-wrap">
+      <canvas id="daily-summary-chart"></canvas>
+    </div>
+    <div class="empty" id="daily-summary-empty" hidden>No transactions in this period.</div>
+  </section>
+
+  <section class="card panel" style="margin-top: 18px;">
+    <div class="section-header">
+      <div>
+        <h2>Transactions</h2>
+        <p class="subtle">{{ transactions|length }} records shown.</p>
       </div>
+    </div>
       {% if transactions %}
         <div class="table-wrap">
           <table>
@@ -103,28 +120,79 @@
       {% else %}
         <div class="empty">No transactions yet. Add one to start tracking.</div>
       {% endif %}
-    </div>
-
-    <aside class="card panel">
-      <h2>Budget progress</h2>
-      <p class="subtle">Expense progress by category for {{ filters.month }}.</p>
-      {% if budget_progress %}
-        {% for item in budget_progress %}
-          <div class="progress-item">
-            <div class="progress-top">
-              <span>{{ item.budget.category }}</span>
-              <span>${{ "%.2f"|format(item.spent) }} / ${{ "%.2f"|format(item.budget.amount) }}</span>
-            </div>
-            <div class="progress-track">
-              <div class="progress-fill" style="--progress: {{ item.percent }}%;"></div>
-            </div>
-            <div class="subtle">${{ "%.2f"|format(item.remaining) }} remaining</div>
-          </div>
-        {% endfor %}
-      {% else %}
-        <div class="empty">Set category budgets to monitor spending.</div>
-      {% endif %}
-      <a class="button button-secondary" href="{{ url_for('budgets', month=filters.month) }}">Manage budgets</a>
-    </aside>
   </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script>
+    (function () {
+      const startInput = document.getElementById("daily-summary-start");
+      const endInput = document.getElementById("daily-summary-end");
+      const emptyState = document.getElementById("daily-summary-empty");
+      const canvas = document.getElementById("daily-summary-chart");
+      const form = document.getElementById("daily-summary-form");
+      let chart = null;
+
+      async function loadSummary() {
+        const params = new URLSearchParams();
+        if (startInput.value) params.set("start", startInput.value);
+        if (endInput.value) params.set("end", endInput.value);
+        params.set("month", {{ filters.month|tojson }});
+
+        const response = await fetch("{{ url_for('daily_summary') }}?" + params.toString());
+        const data = await response.json();
+        if (!response.ok) {
+          return;
+        }
+
+        if (!startInput.value) startInput.value = data.labels[0] || "";
+        if (!endInput.value) endInput.value = data.labels[data.labels.length - 1] || "";
+
+        const hasData = data.labels.length > 0;
+        canvas.hidden = !hasData;
+        emptyState.hidden = hasData;
+        if (!hasData) return;
+
+        if (chart) {
+          chart.data.labels = data.labels;
+          chart.data.datasets[0].data = data.income;
+          chart.data.datasets[1].data = data.expense;
+          chart.update();
+          return;
+        }
+
+        chart = new Chart(canvas, {
+          type: "bar",
+          data: {
+            labels: data.labels,
+            datasets: [
+              { label: "Income", data: data.income, backgroundColor: "#22c55e" },
+              { label: "Expense", data: data.expense, backgroundColor: "#ef4444" },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { labels: { font: { size: 14 } } },
+              tooltip: { titleFont: { size: 14 }, bodyFont: { size: 13 } },
+            },
+            scales: {
+              x: { ticks: { font: { size: 12 } } },
+              y: { beginAtZero: true, ticks: { font: { size: 12 } } },
+            },
+          },
+        });
+      }
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        loadSummary();
+      });
+
+      loadSummary();
+    })();
+  </script>
 {% endblock %}

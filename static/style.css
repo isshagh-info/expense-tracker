@@ -147,6 +147,25 @@ h2 {
   padding: 20px;
 }
 
+#daily-summary-form {
+  margin: 14px 0;
+}
+
+.chart-wrap {
+  position: relative;
+  height: 380px;
+}
+
+#daily-summary-chart {
+  max-width: 100%;
+}
+
+@media (max-width: 620px) {
+  .chart-wrap {
+    height: 280px;
+  }
+}
+
 .stat-label {
   margin-bottom: 12px;
   color: var(--muted);

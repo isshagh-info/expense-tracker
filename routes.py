@@ -1,5 +1,6 @@
 import csv
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, timedelta
 from io import StringIO
 
 from flask import (
@@ -205,6 +206,43 @@ def register_routes(app):
             **build_dashboard_context(month, selected_type, category),
         )
 
+    @app.route("/dashboard/daily-summary")
+    @login_required
+    def daily_summary():
+        month = request.args.get("month") or current_month()
+        try:
+            start_str = request.args.get("start")
+            end_str = request.args.get("end")
+            start = parse_date(start_str) if start_str else month_bounds(month)[0]
+            end = parse_date(end_str) if end_str else month_bounds(month)[1] - timedelta(days=1)
+        except ValueError as error:
+            return {"error": str(error)}, 400
+        if end < start:
+            return {"error": "End date must be on or after the start date."}, 400
+
+        end_of_day = end.replace(hour=23, minute=59, second=59)
+        transactions = Transaction.query.filter(
+            Transaction.user_id == current_user.id,
+            Transaction.date >= start,
+            Transaction.date <= end_of_day,
+        ).all()
+
+        totals = defaultdict(lambda: {"income": 0.0, "expense": 0.0})
+        day = start
+        while day <= end:
+            totals[day.strftime("%Y-%m-%d")]
+            day += timedelta(days=1)
+        for transaction in transactions:
+            day_key = transaction.date.strftime("%Y-%m-%d")
+            totals[day_key][transaction.type] += transaction.amount
+
+        labels = sorted(totals)
+        return {
+            "labels": labels,
+            "income": [round(totals[day]["income"], 2) for day in labels],
+            "expense": [round(totals[day]["expense"], 2) for day in labels],
+        }
+
     @app.route("/logout")
     @login_required
     def logout():
@@ -221,7 +259,9 @@ def register_routes(app):
                 date = parse_date(request.form.get("date"))
             except ValueError as error:
                 flash(str(error), "error")
-                return render_template("transaction_form.html", transaction=None), 400
+                return render_template(
+                    "transaction_form.html", transaction=None, categories=CATEGORIES
+                ), 400
 
             transaction = Transaction(
                 amount=amount,
@@ -233,26 +273,33 @@ def register_routes(app):
             )
             if transaction.type not in ("income", "expense"):
                 flash("Choose income or expense.", "error")
-                return render_template("transaction_form.html", transaction=None), 400
+                return render_template(
+                    "transaction_form.html", transaction=None, categories=CATEGORIES
+                ), 400
 
             db.session.add(transaction)
             db.session.commit()
             flash("Transaction added.", "success")
             return redirect(url_for("dashboard"))
 
-        return render_template("transaction_form.html", transaction=None)
+        return render_template(
+            "transaction_form.html", transaction=None, categories=CATEGORIES
+        )
 
     @app.route("/transactions/<int:transaction_id>/edit", methods=["GET", "POST"])
     @login_required
     def edit_transaction(transaction_id):
         transaction = get_transaction_or_404(transaction_id)
+        categories = sorted(set(CATEGORIES) | {transaction.category})
         if request.method == "POST":
             try:
                 transaction.amount = parse_amount(request.form.get("amount"))
                 transaction.date = parse_date(request.form.get("date"))
             except ValueError as error:
                 flash(str(error), "error")
-                return render_template("transaction_form.html", transaction=transaction), 400
+                return render_template(
+                    "transaction_form.html", transaction=transaction, categories=categories
+                ), 400
 
             transaction.type = request.form.get("type", "expense")
             transaction.category = request.form.get("category", "Other").strip() or "Other"
@@ -260,13 +307,17 @@ def register_routes(app):
 
             if transaction.type not in ("income", "expense"):
                 flash("Choose income or expense.", "error")
-                return render_template("transaction_form.html", transaction=transaction), 400
+                return render_template(
+                    "transaction_form.html", transaction=transaction, categories=categories
+                ), 400
 
             db.session.commit()
             flash("Transaction updated.", "success")
             return redirect(url_for("dashboard"))
 
-        return render_template("transaction_form.html", transaction=transaction)
+        return render_template(
+            "transaction_form.html", transaction=transaction, categories=categories
+        )
 
     @app.post("/transactions/<int:transaction_id>/delete")
     @login_required

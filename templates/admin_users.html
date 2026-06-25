@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - SpendWise{% endblock %}
+
+{% block content %}
+  <section class="section-header">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Manage users</h1>
+      <p class="subtle">View accounts and update roles.</p>
+    </div>
+  </section>
+
+  <section class="card panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.role }}</td>
+              <td>
+                <form class="inline-form" method="POST" action="{{ url_for('update_user_role', user_id=user.id) }}">
+                  <select name="role">
+                    <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
+                    <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
+                  </select>
+                  <button type="submit">Update</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

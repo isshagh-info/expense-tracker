@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "unisoft": {
+      "command": "unisoft-mcp",
+      "args": [],
+      "env": {
+        "UNISOFT_API_BASE_URL": "http://localhost:8000",
+        "UNISOFT_API_PREFIX": "/api/v1",
+        "UNISOFT_PROJECT_ROOT": "C:\\Users\\hp\\Desktop\\expense_tracker",
+        "UNISOFT_PROJECT_ID": "ab8be8c6-a99e-461f-b0ef-7a8447d52370"
+      }
+    }
+  }
+}

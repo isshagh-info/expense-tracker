@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Team - SpendWise{% endblock %}
+
+{% block content %}
+  <section class="section-header">
+    <div>
+      <p class="eyebrow">Team</p>
+      <h1>{{ current_user.team.name if current_user.team else "No team yet" }}</h1>
+      <p class="subtle">
+        {% if current_user.team %}
+          Transactions and budgets are shared with your team.
+        {% else %}
+          Create a team to share budgets and transactions with other users.
+        {% endif %}
+      </p>
+    </div>
+  </section>
+
+  {% if current_user.team %}
+    <section class="card panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for member in current_user.team.members %}
+              <tr>
+                <td>{{ member.username }}</td>
+                <td>{{ member.email }}</td>
+                <td>{{ "Owner" if member.id == current_user.team.owner_id else "Member" }}</td>
+                <td>
+                  {% if current_user.is_team_owner and member.id != current_user.id %}
+                    <form class="inline-form" method="POST" action="{{ url_for('remove_team_member', user_id=member.id) }}">
+                      <button class="button-danger" type="submit">Remove</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {% if current_user.is_team_owner %}
+      <section class="card panel" style="margin-top: 18px;">
+        <h2>Invite a member</h2>
+        <form class="form-grid" method="POST" action="{{ url_for('invite_to_team') }}">
+          <label>Username or email
+            <input name="identifier" required>
+          </label>
+          <button type="submit">Invite</button>
+        </form>
+      </section>
+    {% endif %}
+
+    <section class="card panel" style="margin-top: 18px;">
+      <form method="POST" action="{{ url_for('leave_team') }}">
+        <button class="button-danger" type="submit">Leave team</button>
+      </form>
+    </section>
+  {% else %}
+    <section class="card panel">
+      <form class="form-grid" method="POST">
+        <label>Team name
+          <input name="name" required>
+        </label>
+        <button type="submit">Create team</button>
+      </form>
+    </section>
+  {% endif %}
+{% endblock %}
